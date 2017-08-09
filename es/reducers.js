@@ -3,11 +3,14 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.modelInitialState = undefined;
 
-var _slicedToArray2 = require('babel-runtime/helpers/slicedToArray');
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); /* eslint no-case-declarations: 0 */
 
-var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
-
+exports.byIdReducer = byIdReducer;
+exports.collectionReducer = collectionReducer;
+exports.collectionsReducer = collectionsReducer;
+exports.actionStatusReducer = actionStatusReducer;
 exports.default = crudReducer;
 
 var _immutable = require('immutable');
@@ -15,6 +18,10 @@ var _immutable = require('immutable');
 var _lodash = require('lodash.isequal');
 
 var _lodash2 = _interopRequireDefault(_lodash);
+
+var _devMessage = require('./devMessage');
+
+var _devMessage2 = _interopRequireDefault(_devMessage);
 
 var _actionTypes = require('./actionTypes');
 
@@ -24,7 +31,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * SECTION: initial states
  */
 
-var byIdInitialState = (0, _immutable.fromJS)({}); /* eslint no-case-declarations: 0 */
+var byIdInitialState = (0, _immutable.fromJS)({});
 
 var collectionInitialState = (0, _immutable.fromJS)({
   params: {},
@@ -42,7 +49,7 @@ var actionStatusInitialState = (0, _immutable.fromJS)({
   delete: {}
 });
 
-var modelInitialState = (0, _immutable.fromJS)({
+var modelInitialState = exports.modelInitialState = (0, _immutable.fromJS)({
   byId: byIdInitialState,
   collections: collectionsInitialState,
   actionStatus: actionStatusInitialState
@@ -118,8 +125,12 @@ function collectionReducer() {
       return state.set('params', (0, _immutable.fromJS)(action.meta.params)).set('fetchTime', 0).set('error', null);
     case _actionTypes.FETCH_SUCCESS:
       var originalPayload = action.payload || {};
-      var payload = 'data' in originalPayload ? action.payload.data : action.payload;
+      var payload = 'data' in originalPayload ? originalPayload.data : originalPayload;
       var otherInfo = 'data' in originalPayload ? originalPayload : {};
+      if (!Array.isArray(payload)) {
+        (0, _devMessage2.default)('\n          Payload is not an array! Your server response for a FETCH action\n          should be in one of the following forms:\n\n          { data: [ ... ] }\n\n          or\n\n          [ ... ]\n        \n          Here are the contents of your action:');
+        (0, _devMessage2.default)(JSON.stringify(action));
+      }
       var ids = payload.map(function (elt) {
         return elt.id;
       });
@@ -131,10 +142,16 @@ function collectionReducer() {
   }
 }
 
+/* eslint-disable no-shadow, no-use-before-define */
 function collectionsReducer() {
   var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : collectionsInitialState;
   var action = arguments[1];
 
+  var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+      _ref$collectionReduce = _ref.collectionReducer,
+      collectionReducer = _ref$collectionReduce === undefined ? collectionReducer : _ref$collectionReduce;
+
+  /* eslint-enable no-shadow, no-use-before-define */
   switch (action.type) {
     case _actionTypes.FETCH:
     case _actionTypes.FETCH_SUCCESS:
@@ -151,7 +168,7 @@ function collectionsReducer() {
         return state.push(collectionReducer(undefined, action));
       }
 
-      var _entry = (0, _slicedToArray3.default)(entry, 2),
+      var _entry = _slicedToArray(entry, 2),
           index = _entry[0],
           existingCollection = _entry[1];
 
@@ -226,10 +243,20 @@ function actionStatusReducer() {
   }
 }
 
+/* eslint-disable no-shadow, no-use-before-define */
 function crudReducer() {
   var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialState;
   var action = arguments[1];
 
+  var _ref2 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+      _ref2$actionStatusRed = _ref2.actionStatusReducer,
+      actionStatusReducer = _ref2$actionStatusRed === undefined ? actionStatusReducer : _ref2$actionStatusRed,
+      _ref2$byIdReducer = _ref2.byIdReducer,
+      byIdReducer = _ref2$byIdReducer === undefined ? byIdReducer : _ref2$byIdReducer,
+      _ref2$collectionsRedu = _ref2.collectionsReducer,
+      collectionsReducer = _ref2$collectionsRedu === undefined ? collectionsReducer : _ref2$collectionsRedu;
+
+  /* eslint-enable no-shadow, no-use-before-define */
   var id = action.meta ? action.meta.id : undefined;
   switch (action.type) {
     case _actionTypes.CLEAR_MODEL_DATA:
