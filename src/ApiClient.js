@@ -69,9 +69,13 @@ class ApiClient {
           body
         }).then(response => ({ response, format }))
           .then(this.handleErrors)
-          .then(response => response[format]())
+          .then(response => this.unwrapOdata(response[format]()))
       }
     })
+  }
+
+  unwrapOdata(response) {
+    return response.value
   }
 
   // thanks http://stackoverflow.com/a/12040639/5332286
